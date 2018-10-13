@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Bontouch</string>
+    <string name="text_field">Enter word here</string>
+    <string name="submit_button">Submit</string>
+</resources>
