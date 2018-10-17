@@ -1,5 +1,10 @@
 <resources>
-    <string name="app_name">Bontouch</string>
+    <string name="app_name">Search substring</string>
     <string name="text_field">Enter word here</string>
     <string name="submit_button">Submit</string>
+    <string name="download">Download</string>
+    <string name="fail_download">Could not download dictionary</string>
+    <string name="dictionary_empty">The dictionary is empty</string>
+    <string name="searching">Searching</string>
+    <string name="empty_query">Query was empty</string>
 </resources>

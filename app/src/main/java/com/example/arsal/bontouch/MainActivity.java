@@ -19,29 +19,36 @@ import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Created by Arsalan Syed on 13th October 2018
+ */
+
 public class MainActivity extends AppCompatActivity {
 
+    // Used for storing the entire dictionary once downloaded
     private ArrayList<String> dictionary;
-    TextView textView;
-    TextView textView2;
 
-    private class GetDictionaryTask extends AsyncTask<Void,Void,String> {
+    // Displays messages about query results
+    TextView debugMessage;
+
+    // Will contain all words from our search query
+    TextView foundWordsText;
+
+    //Asynchronous task for downloading the dictionary
+    private class GetDictionaryTask extends AsyncTask<Void,Void,Void> {
 
         @Override
-        protected String doInBackground(Void... voids) {
+        protected Void doInBackground(Void... voids) {
             URL url = null;
             HttpURLConnection urlConnection = null;
-            StringBuilder sb = new StringBuilder();
             dictionary = new ArrayList<>();
 
-            TextView textView = findViewById(R.id.text_view);
-            textView.setText("Downloading");
+            debugMessage.setText(R.string.download);
 
             try {
                 url = new URL("http://runeberg.org/words/ss100.txt");
@@ -49,26 +56,27 @@ public class MainActivity extends AppCompatActivity {
                 InputStream in = new BufferedInputStream(urlConnection.getInputStream());
                 Reader reader = new BufferedReader(new InputStreamReader(in));
 
+                // Read the result of the GET request and add words to dictionary
                 String line;
                 while((line = ((BufferedReader) reader).readLine()) != null){
                     dictionary.add(line);
                 }
-
             } catch (IOException e) {
-                e.printStackTrace(); //TODO change to give error in app not console
+                debugMessage.setText(R.string.fail_download);
             } finally {
                 assert urlConnection != null;
                 urlConnection.disconnect();
             }
-            return sb.toString();
+            return null;
         }
 
-        protected void onPostExecute(String result) {
-            TextView textView = findViewById(R.id.text_view);
-            textView.setText("Download done");
+        protected void onPostExecute(Void v) {
+            debugMessage.setText("Download latest dictionary");
         }
+
     }
 
+    //Asynchronous task for performing a search query
     private class SearchDictionaryTask extends AsyncTask<String,Void,String>{
 
         int numWordsFound = 0;
@@ -76,8 +84,11 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected String doInBackground(String... strings) {
             String searchWord = strings[0];
-            ArrayList<String> substrings = findAllSubstrings(searchWord);
-            Set<String> result = getAllSubstringOccurrences(substrings);
+
+            //Get all words from dictionary containing searchWord
+            Set<String> result = findWords(searchWord);
+
+            //Sort our result
             List<String> sortedList = new ArrayList(result);
             Collections.sort(sortedList);
 
@@ -85,101 +96,77 @@ public class MainActivity extends AppCompatActivity {
 
             StringBuilder sb = new StringBuilder();
             for(String str: sortedList){
-                sb.append(str+"\n");
+                sb.append(str).append("\n");
             }
 
             return sb.toString();
         }
 
         protected void onPostExecute(String result){
-            TextView textView = findViewById(R.id.text_view);
-            textView.setText("Search done, found "+numWordsFound+" words");
-
-            TextView textView2 = findViewById(R.id.textView2);
-            textView2.setText(result);
+            debugMessage.setText(String.format("Search done, found %d words", numWordsFound));
+            foundWordsText.setText(result);
         }
     }
 
-
+    /**
+     * Called when the app is intialized
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        textView = findViewById(R.id.text_view);
-        textView2 = findViewById(R.id.textView2);
+        debugMessage = findViewById(R.id.text_view);
+        foundWordsText = findViewById(R.id.textView2);
 
         new GetDictionaryTask().execute();
     }
 
-    public void search(View view){
+    /**
+     * Called when the button is clicked
+     * @param view
+     */
+    public void onSubmit(View view){
 
         // Get the widget reference from XML layout
         ConstraintLayout layout = findViewById(R.id.main_layout);
         EditText editText = findViewById(R.id.editText);
 
-        // Set a click listener for CoordinatorLayout
-        layout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                // Get the input method manager
-                InputMethodManager inputMethodManager = (InputMethodManager)
-                        view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-                // Hide the soft keyboard
-                inputMethodManager.hideSoftInputFromWindow(view.getWindowToken(),0);
-            }
-        });
+        debugMessage.setText(R.string.searching);
+        foundWordsText.setText("");
 
-        textView.setText("Searching");
-        textView2.setText("");
-
-
+        // Can't do a search
         if(dictionary.size() == 0){
-            textView.setText("empty");
+            debugMessage.setText(R.string.dictionary_empty);
             return;
         }
 
+        //Extract the query parameter
         String searchWord = editText.getText().toString();
+
         if(searchWord.length()==0){
-            textView.setText("Query was empty");
+            debugMessage.setText(R.string.empty_query);
             return;
         }
 
         new SearchDictionaryTask().execute(searchWord);
     }
 
-    // TODO
-    private Set<String> getAllSubstringOccurrences(ArrayList<String> substrings) {
+    /**
+     * Finds all words in the dictionary that contain the input string
+     * @param word
+     * @return
+     */
+    private Set<String> findWords(String word){
         Set<String> result = new HashSet<>();
 
-        for(String substring: substrings){
-            for(String dictWord:dictionary){
-                if(dictWord.contains(substring)){
-                    result.add(dictWord);
-                }
+        for(String dictWord:dictionary){
+            if(dictWord.contains(word)){
+                result.add(dictWord);
             }
         }
 
         return result;
     }
-
-    public static ArrayList<String> findAllSubstrings(String s){
-        ArrayList<String> substrings = new ArrayList<>();
-        int length = s.length();
-
-        for(int i=length-1;i>=0;i--){
-            int numWords = length-i;
-            int start = 0;
-            int end = i;
-
-            for(int j=0;j<numWords;j++){
-                substrings.add(s.substring(start,end+1));
-                start += 1;
-                end += 1;
-            }
-        }
-
-        return substrings;
-    }
-
 }
