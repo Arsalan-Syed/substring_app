@@ -1,10 +1,8 @@
 package com.example.arsal.bontouch;
 
-import android.content.Context;
 import android.os.AsyncTask;
 import android.support.constraint.ConstraintLayout;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -26,6 +24,12 @@ import java.util.Set;
 
 /**
  * Created by Arsalan Syed on 13th October 2018
+ *
+ * Basic app that allows you to search for all words containing
+ * a certain input word. It searches through a dictionary that is
+ * downloaded once the app starts. It downloads the dictionary and
+ * searches through it in separate threads to avoid slowing down
+ * the main UI thread.
  */
 
 public class MainActivity extends AppCompatActivity {
@@ -71,7 +75,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
         protected void onPostExecute(Void v) {
-            debugMessage.setText("Download latest dictionary");
+            if(dictionary.size()==0){
+                debugMessage.setText(R.string.fail_download);
+            } else {
+                debugMessage.setText(R.string.dictionary_downloaded);
+            }
         }
 
     }
@@ -155,8 +163,6 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Finds all words in the dictionary that contain the input string
-     * @param word
-     * @return
      */
     private Set<String> findWords(String word){
         Set<String> result = new HashSet<>();

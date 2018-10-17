@@ -7,4 +7,5 @@
     <string name="dictionary_empty">The dictionary is empty</string>
     <string name="searching">Searching</string>
     <string name="empty_query">Query was empty</string>
+    <string name="dictionary_downloaded">Download latest dictionary</string>
 </resources>
